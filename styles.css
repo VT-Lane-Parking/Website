@@ -519,3 +519,51 @@ form#yard-form button[type="submit"]:hover {
     background-color: #861F41; /* Maroon hover effect */
     color: white;
 }
+
+.image-collage {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* Adjust the spacing between images */
+}
+
+.image-collage img {
+    width: 200px; /* Adjust the width to fit your design */
+    height: auto; /* Maintain aspect ratio */
+    border-radius: 10px; /* Optional: round the corners */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: add shadow */
+}
+
+/* Style the payment method section */
+#payment-options {
+    display: flex;
+    flex-direction: column; /* Stack elements vertically */
+    gap: 10px; /* Add some space between each payment option */
+    align-items: flex-start; /* Align checkboxes and labels to the left */
+    margin-bottom: 20px; /* Add space below the payment options */
+}
+
+#payment-options label {
+    display: flex;
+    align-items: center; /* Vertically align the checkbox and label text */
+    gap: 10px; /* Add space between the checkbox and the label text */
+    font-size: 18px; /* Adjust font size */
+    color: white; /* Keep the text color consistent with your design */
+}
+
+/* Ensure the input fields for usernames are aligned with their labels */
+#payment-options input[type="text"] {
+    display: block;
+    margin-top: 5px; /* Add some space between the checkbox and input field */
+    width: 100%; /* Make input fields full width */
+    max-width: 300px; /* Limit the width of input fields */
+    padding: 5px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    background-color: #861F41; /* Match the background color with the site theme */
+    color: white;
+}
+
+#payment-options input[type="checkbox"] {
+    width: auto;
+    margin-right: 10px; /* Ensure there's space between the checkbox and label */
+}

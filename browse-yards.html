@@ -36,61 +36,6 @@
             <h2>How it Works:</h2>
             <p>Search and filter for yards based upon location, cost, or event. Once you have reserved a spot, you will receive an email with details on how to pay.</p>
         </section>
-
-        <div id="filters">
-            <h2>Filters</h2>
-        
-            <div class="filter-group">
-                <!-- Date Range Filter -->
-                <div class="filter-item">
-                    <label>Date Range:</label>
-                    <input type="date" id="start-date" />
-                    <span class="range-to">to</span>
-                    <input type="date" id="end-date" />
-                </div>
-        
-                <!-- Time Range Filter -->
-                <div class="filter-item">
-                    <label>Time Range:</label>
-                    <input type="time" id="start-time" />
-                    <span class="range-to">to</span>
-                    <input type="time" id="end-time" />
-                </div>
-        
-                <!-- Spots Available Filter -->
-                <div class="filter-item">
-                    <label>Spots Available:</label>
-                    <input type="number" id="min-spots" placeholder="Min Spots" />
-                    <span class="range-to">to</span>
-                    <input type="number" id="max-spots" placeholder="Max Spots" />
-                </div>
-        
-                <!-- Price Range Filter -->
-                <div class="filter-item">
-                    <label>Price Range:</label>
-                    <input type="number" id="min-price" placeholder="Min Price" />
-                    <span class="range-to">to</span>
-                    <input type="number" id="max-price" placeholder="Max Price" />
-                </div>
-                
-                <!-- Add Listing Type Filter -->
-                <div class="filter-item">
-                    <label for="listing-type-filter">Listing Type:</label>
-                    <select id="listing-type-filter">
-                        <option value="">Select Type</option>
-                    </select>
-                </div>
-        
-                <!-- Distance from Location Filter -->
-                <div class="filter-item full-width">
-                    <label>Distance from Lane Stadium:</label>
-                    <input type="number" id="max-distance" placeholder="Max Distance (miles)" />
-                </div>
-            </div>
-        
-            <!-- Apply Filters Button -->
-            <button id="apply-filters-btn">Submit</button>
-        </div>
         
         <!-- Yard Listings -->
         <section id="yard-listings">
@@ -123,6 +68,19 @@
                 <input type="text" id="phone" placeholder="Phone Number" required>
                 <input type="email" id="signup-email" placeholder="Email" required>
                 <input type="password" id="signup-password" placeholder="Password" minlength="8" required>
+                     <!-- Add this in the signup-form in index.html -->
+                     <h3>Preferred Payment Method</h3>
+                     <h4>Please select one or more payment methods if you plan on listing your yard</h4>
+                     <div id="payment-options">
+                         <label><input type="checkbox" id="paypal-checkbox" value="PayPal:"> PayPal</label>
+                         <input type="text" id="paypal-username" placeholder="PayPal Username" style="display:none;">
+                         
+                         <label><input type="checkbox" id="venmo-checkbox" value="Venmo:"> Venmo</label>
+                         <input type="text" id="venmo-username" placeholder="Venmo Username" style="display:none;">
+                         
+                         <label><input type="checkbox" id="zelle-checkbox" value="Zelle:"> Zelle</label>
+                         <input type="text" id="zelle-username" placeholder="Zelle Username" style="display:none;">
+                     </div>
                 <button type="submit">Sign Up</button>
             </form>
         </div>

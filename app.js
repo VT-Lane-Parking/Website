@@ -62,38 +62,53 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Sign Up Form Submission
     const signupForm = document.getElementById('signup-form');
     if (signupForm) {
         signupForm.addEventListener('submit', function(e) {
             e.preventDefault();
-
+    
             const firstName = document.getElementById('first-name').value;
             const lastInitial = document.getElementById('last-initial').value;
             const phone = document.getElementById('phone').value;
             const email = document.getElementById('signup-email').value;
             const password = document.getElementById('signup-password').value;
-
-            // Create user account
+            
+            // Get selected payment methods and usernames
+            const paymentMethods = [];
+            const paypalUsername = document.getElementById('paypal-username').value;
+            const venmoUsername = document.getElementById('venmo-username').value;
+            const zelleUsername = document.getElementById('zelle-username').value;
+    
+            if (document.getElementById('paypal-checkbox').checked) {
+                paymentMethods.push({ method: 'PayPal', username: paypalUsername });
+            }
+            if (document.getElementById('venmo-checkbox').checked) {
+                paymentMethods.push({ method: 'Venmo', username: venmoUsername });
+            }
+            if (document.getElementById('zelle-checkbox').checked) {
+                paymentMethods.push({ method: 'Zelle', username: zelleUsername });
+            }
+    
+            // Save user data including payment methods
             firebase.auth().createUserWithEmailAndPassword(email, password)
-            .then(userCredential => {
-                const user = userCredential.user;
-                // Add user info to Firestore
-                return db.collection('users').doc(user.uid).set({
-                    firstName: firstName,
-                    lastInitial: lastInitial,
-                    phone: phone,
-                    email: email
+                .then(userCredential => {
+                    const user = userCredential.user;
+                    return db.collection('users').doc(user.uid).set({
+                        firstName: firstName,
+                        lastInitial: lastInitial,
+                        phone: phone,
+                        email: email,
+                        paymentMethods: paymentMethods
+                    });
+                })
+                .then(() => {
+                    alert('Account created successfully.');
+                    signupForm.reset();
+                    closeModal();
+                })
+                .catch(error => {
+                    console.error('Error during sign up:', error.message);
                 });
-            })
-            .then(() => {
-                alert('Account created successfully.');
-                document.getElementById('signup-form').reset();
-                closeModal();
-            })
-            .catch(error => {
-                console.error('Error during sign up:', error.message);
-            });
         });
     }
 
@@ -146,6 +161,16 @@ document.addEventListener('DOMContentLoaded', function () {
         populateFilters();
     });
     
+    // Add event listeners for payment method checkboxes
+    document.getElementById('paypal-checkbox').addEventListener('change', function() {
+        document.getElementById('paypal-username').style.display = this.checked ? 'block' : 'none';
+    });
+    document.getElementById('venmo-checkbox').addEventListener('change', function() {
+        document.getElementById('venmo-username').style.display = this.checked ? 'block' : 'none';
+    });
+    document.getElementById('zelle-checkbox').addEventListener('change', function() {
+        document.getElementById('zelle-username').style.display = this.checked ? 'block' : 'none';
+    });
 
     // Fetch and display yard listings on the Browse Yards page
     const yardListingsDiv = document.getElementById('yard-listings');
@@ -465,30 +490,42 @@ document.addEventListener('DOMContentLoaded', function () {
         modal.style.display = 'none';
     }
 
-    // Place this outside of the DOMContentLoaded event
     function reserveSpot(yardId, spotsToReserve) {
         const yardRef = db.collection('yards').doc(yardId);
-    
-        yardRef.get().then((doc) => {
+        
+        yardRef.get().then(async (doc) => {
             if (doc.exists) {
                 const yardData = doc.data();
                 const availableSpots = yardData.spots;
     
-                console.log('Available Spots:', availableSpots);  // Log available spots
-                console.log('Spots to Reserve:', spotsToReserve);  // Log spots to reserve
-    
                 if (availableSpots >= spotsToReserve) {
                     const updatedSpots = availableSpots - spotsToReserve;
     
-                    return yardRef.update({
-                        spots: updatedSpots
-                    }).then(() => {
-                        alert('Reservation successful!');
-                        closeReservationModal(); // Close modal after reservation
-                        displayYardListings();  // Refresh yard listings to show updated spots
-                    });
+                    // Fetch the owner's payment methods
+                    const ownerRef = db.collection('users').doc(yardData.owner);
+                    const ownerDoc = await ownerRef.get();
+                    if (ownerDoc.exists) {
+                        const ownerData = ownerDoc.data();
+                        const paymentMethods = ownerData.paymentMethods || [];
+    
+                        let paymentMessage = 'Must pay owner of parking place. Owner accepts these methods of payment:\n';
+                        paymentMethods.forEach(pm => {
+                            paymentMessage += `${pm.method}: ${pm.username}\n`;
+                        });
+    
+                        alert(paymentMessage); // Display the payment methods
+    
+                        // Proceed with reservation update
+                        return yardRef.update({
+                            spots: updatedSpots
+                        }).then(() => {
+                            alert('Reservation successful!');
+                            closeReservationModal();
+                            displayYardListings();
+                        });
+                    }
                 } else {
-                    alert('Not enough spots available!'); 
+                    alert('Not enough spots available!');
                 }
             } else {
                 console.error('Yard not found!');
@@ -527,38 +564,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }).catch((error) => {
             console.error('Error fetching yard listings: ', error);
-        });
-    }
-
-    function reserveSpot(yardId, spotsToReserve) {
-        const yardRef = db.collection('yards').doc(yardId);
-    
-        yardRef.get().then((doc) => {
-            if (doc.exists) {
-                const yardData = doc.data();
-                const availableSpots = yardData.spots;
-    
-                // Check if there are enough spots available
-                if (availableSpots >= spotsToReserve) {
-                    const updatedSpots = availableSpots - spotsToReserve;
-    
-                    // Update the document with the new number of available spots
-                    return yardRef.update({
-                        spots: updatedSpots
-                    }).then(() => {
-                        alert("Reservation successful!");
-                        closeReservationModal();  // Close the modal after successful reservation
-                        displayYardListings();    // Refresh the yard listings to show updated spots
-                    });
-                } else {
-                    // Display error if there are not enough spots
-                    alert("Not enough spots available! Please reduce the number of spots.");
-                }
-            } else {
-                console.error("Yard not found!");
-            }
-        }).catch((error) => {
-            console.error("Error updating spots: ", error);
         });
     }
 

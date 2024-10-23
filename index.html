@@ -72,6 +72,18 @@
                 <input type="text" id="phone" placeholder="Phone Number" required>
                 <input type="email" id="signup-email" placeholder="Email" required>
                 <input type="password" id="signup-password" placeholder="Password" minlength="8" required>
+                <h3>Preferred Payment Method</h3>
+                    <h4>Please select one or more payment methods if you plan on listing your yard</h4>
+                    <div id="payment-options">
+                        <label><input type="checkbox" id="paypal-checkbox" value="PayPal:"> PayPal</label>
+                        <input type="text" id="paypal-username" placeholder="PayPal Username" style="display:none;">
+                        
+                        <label><input type="checkbox" id="venmo-checkbox" value="Venmo:"> Venmo</label>
+                        <input type="text" id="venmo-username" placeholder="Venmo Username" style="display:none;">
+                        
+                        <label><input type="checkbox" id="zelle-checkbox" value="Zelle:"> Zelle</label>
+                        <input type="text" id="zelle-username" placeholder="Zelle Username" style="display:none;">
+                    </div>
                 <button type="submit">Sign Up</button>
             </form>
         </div>
