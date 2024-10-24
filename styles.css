@@ -32,6 +32,7 @@ body {
     list-style-type: none;
     padding: 0;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
     gap: 20px; /* Space between the tabs */
 }
@@ -284,9 +285,9 @@ form#yard-form button[type="submit"]:hover {
     border: none; /* Remove borders to clean up */
     border-radius: 5px;
     cursor: pointer;
-    position: absolute;
-    bottom: 20px;
-    right: 20px;
+    display: block;
+    margin: 20px auto;
+    width: 80%;
 }
 
 .modal-content button:hover {
@@ -296,9 +297,13 @@ form#yard-form button[type="submit"]:hover {
 /* ==================== Auth Button (Log In / Sign Up) ==================== */
 /* Auth Buttons */
 .auth-buttons {
-    position: absolute;
-    top: 20px;
-    right: 20px;
+    position: static; /* Change from absolute to static for mobile */
+    width: 100%; /* Full width */
+    display: flex;
+    flex-direction: column; /* Stack buttons vertically on smaller screens */
+    margin: 0 auto;
+    padding: 10px;
+    text-align: center;
 }
 
 .auth-buttons button {
@@ -309,7 +314,9 @@ form#yard-form button[type="submit"]:hover {
     border-radius: 5px;
     font-weight: bold;
     cursor: pointer;
-    margin-left: 10px;
+    margin: 10px 0;
+    width: 90%;
+    font-size: 16px;
 }
 
 .auth-buttons button:hover {
@@ -522,15 +529,36 @@ form#yard-form button[type="submit"]:hover {
 
 .image-collage {
     display: flex;
-    justify-content: center;
-    gap: 20px; /* Adjust the spacing between images */
+    flex-direction: row; /* Images are arranged horizontally */
+    justify-content: space-around;
+    align-items: center;
+    gap: 10px; /* Adjust the spacing between images */
+    flex-wrap: nowrap; /* Allow wrapping if needed */
+    width: 100%;
 }
 
 .image-collage img {
-    width: 200px; /* Adjust the width to fit your design */
+    width: 30%;
+    height: auto;
+    max-width: 200px; /* Adjust based on your desired size */
     height: auto; /* Maintain aspect ratio */
-    border-radius: 10px; /* Optional: round the corners */
+    object-fit: cover;
+    border-radius: 10px; /* Optional: add rounded corners */
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: add shadow */
+}
+
+@media (max-width: 768px) {
+    .image-collage {
+        flex-direction: column; /* Images will stack vertically on mobile */
+        align-items: center; /* Center images vertically */
+        flex-wrap: wrap;
+    }
+
+    .image-collage img {
+        width: 90%; /* Make images take up most of the screen width on mobile */
+        height: auto;
+        max-width: none; /* Remove the max-width limit for smaller screens */
+    }
 }
 
 /* Style the payment method section */
@@ -566,4 +594,88 @@ form#yard-form button[type="submit"]:hover {
 #payment-options input[type="checkbox"] {
     width: auto;
     margin-right: 10px; /* Ensure there's space between the checkbox and label */
+}
+
+@media (max-width: 768px) {
+    .nav-tabs {
+        flex-direction: column; /* Stack vertically on smaller screens */
+    }
+    .nav-tabs li {
+        width: 100%; /* Full width for each nav item */
+    }
+}
+
+/* Ensure the main sections are responsive */
+section {
+    max-width: 100%; /* Full width on small screens */
+    margin: 10px; /* Decrease margin on small screens */
+    padding: 10px;
+}
+
+/* For form elements */
+form#yard-form {
+    max-width: 100%; /* Adjust to full width on mobile */
+    margin: 10px auto;
+}
+
+.auth-buttons button, .reserve-button {
+    width: 100%; /* Full width on mobile */
+    padding: 15px; /* Increase padding for easier tap */
+    font-size: 16px; /* Increase font size for readability */
+}
+
+@media (min-width: 768px) {
+    .auth-buttons button, .reserve-button {
+        width: auto; /* Return to normal size on larger screens */
+    }
+}
+
+/* Ensure listings are responsive */
+.yard-listing {
+    padding: 10px;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 768px) {
+    .yard-listing {
+        font-size: 14px;
+        padding: 5px;
+    }
+}
+
+.image-collage img {
+    max-width: 100%;
+    height: auto; /* Maintain aspect ratio */
+}
+
+@media (max-width: 768px) {
+    .nav-tabs {
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 768px) {
+    h1, h2 {
+        font-size: 80%;
+    }
+    .modal-content h2 {
+        font-size: 24px; /* Smaller heading for mobile */
+    }
+}
+
+@media (max-width: 768px) {
+    section {
+        padding: 10px;
+        margin: 10px auto;
+    }
+    form#yard-form {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    button {
+        width: 100%;
+        font-size: 16px; /* Ensure buttons are readable on small screens */
+    }
 }
