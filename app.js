@@ -15,50 +15,41 @@ document.addEventListener('DOMContentLoaded', function () {
     firebase.initializeApp(firebaseConfig);
     db = firebase.firestore();
 
-    // Check auth state to toggle log-in/log-out buttons and List Yard form
-    firebase.auth().onAuthStateChanged(function (user) {
-    const loginBtn = document.getElementById('login-btn');
-    const signupBtn = document.getElementById('signup-btn');
-    const logoutBtn = document.getElementById('logout-btn');
-    const yardForm = document.getElementById('yard-form');
-    const editAccountBtn = document.getElementById('edit-account-btn');  // Add this line
-    const editYardBtn = document.getElementById('edit-yard-btn');  // Add this line
-        
-    if (user) {
-        // User is logged in, show log-out button, List Yard form, and Edit buttons
-        loginBtn.style.display = 'none';
-        signupBtn.style.display = 'none';
-        logoutBtn.style.display = 'inline-block';
-    
-        if (yardForm) {
-            yardForm.style.display = 'block'; // Show the List Yard form
-        }
-    
-        if (editAccountBtn) {
-            editAccountBtn.style.display = 'inline-block';  // Show Edit Account button
-        }
-        if (editYardBtn) {
-            editYardBtn.style.display = 'inline-block';  // Show Edit Yard Postings button
-        }
-            
-    } else {
-        // User is not logged in, show log-in and sign-up buttons and hide form/buttons
-        loginBtn.style.display = 'inline-block';
-        signupBtn.style.display = 'inline-block';
-        logoutBtn.style.display = 'none';
-    
-        if (yardForm) {
-            yardForm.style.display = 'none'; // Hide the List Yard form
-        }
-    
-        if (editAccountBtn) {
-            editAccountBtn.style.display = 'none';  // Hide Edit Account button
-        }
-        if (editYardBtn) {
-            editYardBtn.style.display = 'none';  // Hide Edit Yard Postings button
-        }
-            // Ensure yard listings are visible when logged out
-            displayYardListings();  // Fetch and display yard listings when logged out
+    // Check authentication and adjust UI based on login state
+    firebase.auth().onAuthStateChanged((user) => {
+        const yardListingsDiv = document.getElementById('yard-listings');
+        const loginBtn = document.getElementById('login-btn');
+        const signupBtn = document.getElementById('signup-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const yardForm = document.getElementById('yard-form');
+        const editAccountBtn = document.getElementById('edit-account-btn');
+        const editYardBtn = document.getElementById('edit-yard-btn');
+
+        if (user) {
+            // User is logged in, adjust UI and show listings
+            if (loginBtn && signupBtn && logoutBtn) {
+                loginBtn.style.display = 'none';
+                signupBtn.style.display = 'none';
+                logoutBtn.style.display = 'inline-block';
+            }
+            if (yardForm) yardForm.style.display = 'block';
+            if (editAccountBtn) editAccountBtn.style.display = 'inline-block';
+            if (editYardBtn) editYardBtn.style.display = 'inline-block';
+
+            displayYardListings(); // Display listings for logged-in users
+        } else {
+            // User is not logged in, adjust UI accordingly
+            if (loginBtn && signupBtn && logoutBtn) {
+                loginBtn.style.display = 'inline-block';
+                signupBtn.style.display = 'inline-block';
+                logoutBtn.style.display = 'none';
+            }
+            if (yardForm) yardForm.style.display = 'none';
+            if (editAccountBtn) editAccountBtn.style.display = 'none';
+            if (editYardBtn) editYardBtn.style.display = 'none';
+            if (yardListingsDiv) {
+                yardListingsDiv.innerHTML = '<p>You must log in to see available yards and reserve a spot.</p>';
+            }
         }
     });
 
@@ -397,31 +388,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }).catch((error) => {
         console.error('Error fetching yards: ', error);
     });
-    
-    document.addEventListener('DOMContentLoaded', function () {
-        const filterButton = document.getElementById('apply-filters');
-        
-        if (filterButton) {
-            filterButton.addEventListener('click', function () {
-                // Get filter values
-                const startDate = document.getElementById('start-date').value;
-                const endDate = document.getElementById('end-date').value;
-                const startTime = document.getElementById('start-time').value;
-                const endTime = document.getElementById('end-time').value;
-                const minSpots = parseInt(document.getElementById('min-spots').value);
-                const maxSpots = parseInt(document.getElementById('max-spots').value);
-                const minPrice = parseFloat(document.getElementById('min-price').value);
-                const maxPrice = parseFloat(document.getElementById('max-price').value);
-                const locationAddress = document.getElementById('location-address').value;
-                const maxDistance = parseFloat(document.getElementById('max-distance').value);
-    
-                // Call the function to filter and display yards
-                filterAndDisplayYardListings(startDate, endDate, startTime, endTime, minSpots, maxSpots, minPrice, maxPrice, locationAddress, maxDistance);
-            });
-        }
-    
-        displayYardListings(); // Display all listings initially
-    });
 
     // Listen for authentication state changes
     firebase.auth().onAuthStateChanged((user) => {
@@ -567,27 +533,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Place the geocoding function here (Step 1 code from earlier)
-    async function getCoordinates(address) {
-        const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
-
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-
-            if (data.length > 0) {
-                const location = data[0];
-                return { lat: parseFloat(location.lat), lng: parseFloat(location.lon) };
-            } else {
-                console.error('Address not found');
-                return null;
-            }
-        } catch (error) {
-            console.error('Error with Nominatim API:', error);
-            return null;
-        }
-    }
-
     // DOMContentLoaded event to ensure the page is fully loaded before interacting with the form
     document.addEventListener('DOMContentLoaded', function () {
         const yardForm = document.getElementById('yard-form');
@@ -651,79 +596,3 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
-
-// Hardcoded coordinates for Lane Stadium (Beamer Way)
-const beamerWayCoords = {
-    lat: 37.229573,
-    lng: -80.418376
-};
-
-// Haversine formula to calculate the distance between two lat/lng pairs
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the earth in km
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a = 
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * 
-        Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in km
-    return distance * 0.621371; // Convert to miles
-}
-
-// Function to filter and display yards based on the filters applied
-function filterAndDisplayYardListings(startDate, endDate, minSpots, maxSpots, minPrice, maxPrice, listingType, maxDistance) {
-    db.collection('yards').get().then((querySnapshot) => {
-        const yardListingsDiv = document.getElementById('yard-listings');
-        yardListingsDiv.innerHTML = ''; // Clear previous listings
-
-        querySnapshot.forEach((doc) => {
-            const yard = doc.data();
-
-            // Apply filters
-            const isWithinDateRange = (!startDate || !endDate || (yard.eventDate >= startDate && yard.eventDate <= endDate));
-            const isWithinSpotsRange = (!minSpots || !maxSpots || (yard.spots >= minSpots && yard.spots <= maxSpots));
-            const isWithinPriceRange = (!minPrice || !maxPrice || (yard.price >= minPrice && yard.price <= maxPrice));
-            const matchesListingType = (!listingType || yard.listingType === listingType);
-
-            // Calculate distance from Lane Stadium
-            const distanceFromStadium = calculateDistance(beamerWayCoords.lat, beamerWayCoords.lng, yard.location.lat, yard.location.lng);
-            const isWithinDistance = (!maxDistance || distanceFromStadium <= maxDistance);
-
-            // Only display listings if all filters match
-            if (isWithinDateRange && isWithinSpotsRange && isWithinPriceRange && matchesListingType && isWithinDistance) {
-                const yardDiv = document.createElement('div');
-                yardDiv.classList.add('yard-listing');
-                yardDiv.innerHTML = `
-                    <h3>Address: ${yard.address}</h3>
-                    <p>Price: $${yard.price} per event</p>
-                    <p>Available Spots: ${yard.spots}</p>
-                    <p>Distance from Lane Stadium: ${distanceFromStadium.toFixed(2)} miles</p>
-                    <button onclick="openReservationModal('${doc.id}')" class="reserve-button">Reserve</button>
-                `;
-                yardListingsDiv.appendChild(yardDiv);
-            }
-        });
-
-        if (yardListingsDiv.innerHTML === '') {
-            yardListingsDiv.innerHTML = "<p>No yards match your search criteria.</p>";
-        }
-    }).catch((error) => {
-        console.error('Error fetching yard listings: ', error);
-    });
-}
-
-// Event listener for the 'Apply Filters' button
-document.getElementById('apply-filters-btn').addEventListener('click', function() {
-    const startDate = document.getElementById('start-date').value;
-    const endDate = document.getElementById('end-date').value;
-    const minSpots = parseInt(document.getElementById('min-spots').value);
-    const maxSpots = parseInt(document.getElementById('max-spots').value);
-    const minPrice = parseFloat(document.getElementById('min-price').value);
-    const maxPrice = parseFloat(document.getElementById('max-price').value);
-    const listingType = document.getElementById('listing-type-filter').value;
-    const maxDistance = parseFloat(document.getElementById('max-distance').value);
-
-    filterAndDisplayYardListings(startDate, endDate, minSpots, maxSpots, minPrice, maxPrice, listingType, maxDistance);
-});
