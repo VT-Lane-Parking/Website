@@ -220,7 +220,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('zelle-checkbox').checked) {
                 paymentMethods.push({ method: 'Zelle', username: zelleUsername });
             }
-    
             // Save user data including payment methods
             firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then(userCredential => {
