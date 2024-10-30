@@ -275,12 +275,16 @@ document.addEventListener('DOMContentLoaded', function () {
     
             // Populate listing type filter
             const listingTypeFilter = document.getElementById('listing-type-filter');
-            listingTypes.forEach(type => {
-                const option = document.createElement('option');
-                option.value = type;
-                option.textContent = type;
-                listingTypeFilter.appendChild(option);
-            });
+            if (listingTypeFilter) {
+                listingTypes.forEach(type => {
+                    const option = document.createElement('option');
+                    option.value = type;
+                    option.textContent = type;
+                    listingTypeFilter.appendChild(option);
+                });
+            } else {
+                console.error('listing-type-filter element not found');
+            }
         }).catch(error => {
             console.error('Error fetching yard data: ', error);
         });
