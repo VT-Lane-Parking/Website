@@ -1,5 +1,146 @@
 let db; // Declare db variable outside of the DOMContentLoaded event
 
+// Function to open the modal for login or sign-up
+function openModal(mode) {
+    const authModal = document.getElementById('auth-modal');
+    authModal.style.display = 'block';
+
+    // Display the appropriate form based on the mode
+    if (mode === 'login') {
+        document.getElementById('login-form').style.display = 'block';
+        document.getElementById('signup-form').style.display = 'none';
+    } else if (mode === 'signup') {
+        document.getElementById('signup-form').style.display = 'block';
+        document.getElementById('login-form').style.display = 'none';
+    }
+}
+
+// Function to close the modal
+function closeModal() {
+    const authModal = document.getElementById('auth-modal');
+    authModal.style.display = 'none';
+
+    // Hide both forms after closing
+    document.getElementById('login-form').style.display = 'none';
+    document.getElementById('signup-form').style.display = 'none';
+}
+
+// Function to handle user log out
+function logout() {
+    firebase.auth().signOut().then(() => {
+        alert('Logged out successfully!');
+        window.location.reload();  // Reload the page to refresh buttons and listings
+    }).catch((error) => {
+        console.error('Error logging out: ', error);
+    });
+}
+
+// Function to open the reservation modal
+function openReservationModal(yardId) {
+    const modal = document.getElementById('reservation-modal');
+    modal.style.display = 'block';
+
+    // Store the yardId in a data attribute on the form
+    const reserveForm = document.getElementById('reserve-form');
+    reserveForm.dataset.yardId = yardId; // Attach the yardId to the form
+
+    // Attach the form event listener here to prevent multiple listeners
+    reserveForm.onsubmit = function (e) {
+        e.preventDefault(); // Prevent form from refreshing
+
+        console.log("Form submission intercepted."); // Debugging line
+
+        const spotsToReserve = parseInt(document.getElementById('reserve-spots').value); // Number of spots to reserve
+        const yardId = reserveForm.dataset.yardId; // Get yardId from data attribute
+
+        // Call the function to reserve the spot
+        reserveSpot(yardId, spotsToReserve);
+    };
+}
+
+// Function to close the reservation modal
+function closeReservationModal() {
+    const modal = document.getElementById('reservation-modal');
+    modal.style.display = 'none';
+}
+
+function reserveSpot(yardId, spotsToReserve) {
+    const yardRef = db.collection('yards').doc(yardId);
+    
+    yardRef.get().then(async (doc) => {
+        if (doc.exists) {
+            const yardData = doc.data();
+            const availableSpots = yardData.spots;
+
+            if (availableSpots >= spotsToReserve) {
+                const updatedSpots = availableSpots - spotsToReserve;
+
+                // Fetch the owner's payment methods
+                const ownerRef = db.collection('users').doc(yardData.owner);
+                const ownerDoc = await ownerRef.get();
+                if (ownerDoc.exists) {
+                    const ownerData = ownerDoc.data();
+                    const paymentMethods = ownerData.paymentMethods || [];
+
+                    let paymentMessage = 'Must pay owner of parking place. Owner accepts these methods of payment:\n';
+                    paymentMethods.forEach(pm => {
+                        paymentMessage += `${pm.method}: ${pm.username}\n`;
+                    });
+
+                    alert(paymentMessage); // Display the payment methods
+
+                    // Proceed with reservation update
+                    return yardRef.update({
+                        spots: updatedSpots
+                    }).then(() => {
+                        alert('Reservation successful!');
+                        closeReservationModal();
+                        displayYardListings();
+                    });
+                }
+            } else {
+                alert('Not enough spots available!');
+            }
+        } else {
+            console.error('Yard not found!');
+        }
+    }).catch(error => {
+        console.error('Error updating spots:', error);
+    });
+}
+
+function displayYardListings() {
+    db.collection('yards').get().then((querySnapshot) => {
+        const yardListingsDiv = document.getElementById('yard-listings');
+        yardListingsDiv.innerHTML = ''; // Clear any previous listings
+
+        querySnapshot.forEach((doc) => {
+            const yard = doc.data();
+            const yardId = doc.id; // Unique ID for each yard
+
+            // Only display listings with available spots
+            if (yard.spots > 0) {
+                const yardDiv = document.createElement('div');
+                yardDiv.classList.add('yard-listing');
+
+                // Populate yard details and create Reserve button
+                yardDiv.innerHTML = `
+                    <h3>Address: ${yard.address}</h3>
+                    <p>Price: $${yard.price} per car</p>
+                    <p>Date of Event: ${yard.eventDate}</p>
+                    <p>Availability: ${yard.startTime} - ${yard.endTime}</p>
+                    <p>Available Spots: ${yard.spots}</p>
+                    <button onclick="openReservationModal('${yardId}')" class="reserve-button">Reserve</button>
+                `;
+
+                yardListingsDiv.appendChild(yardDiv);
+            }
+        });
+    }).catch((error) => {
+        console.error('Error fetching yard listings: ', error);
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     // Firebase Configuration
     const firebaseConfig = {
@@ -123,7 +264,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    
     function populateFilters() {
         db.collection('yards').get().then((querySnapshot) => {
             const listingTypes = new Set();
@@ -145,12 +285,9 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error fetching yard data: ', error);
         });
     }
-    
 
     // Ensure populateFilters is called when the page loads
-    document.addEventListener('DOMContentLoaded', function() {
-        populateFilters();
-    });
+    populateFilters();
     
     // Add event listeners for payment method checkboxes
     document.getElementById('paypal-checkbox').addEventListener('change', function() {
@@ -246,46 +383,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
-});
 
-
-// Function to open the modal for login or sign-up
-function openModal(mode) {
-    const authModal = document.getElementById('auth-modal');
-    authModal.style.display = 'block';
-
-    // Display the appropriate form based on the mode
-    if (mode === 'login') {
-        document.getElementById('login-form').style.display = 'block';
-        document.getElementById('signup-form').style.display = 'none';
-    } else if (mode === 'signup') {
-        document.getElementById('signup-form').style.display = 'block';
-        document.getElementById('login-form').style.display = 'none';
-    }
-}
-
-// Function to close the modal
-function closeModal() {
-    const authModal = document.getElementById('auth-modal');
-    authModal.style.display = 'none';
-
-    // Hide both forms after closing
-    document.getElementById('login-form').style.display = 'none';
-    document.getElementById('signup-form').style.display = 'none';
-}
-
-// Function to handle user log out
-function logout() {
-    firebase.auth().signOut().then(() => {
-        alert('Logged out successfully!');
-        window.location.reload();  // Reload the page to refresh buttons and listings
-    }).catch((error) => {
-        console.error('Error logging out: ', error);
-    });
-}
-
-// Yard Listing Submission
-document.addEventListener('DOMContentLoaded', function () {
+    // Yard Listing Submission
     const yardForm = document.getElementById('yard-form');
     
     if (yardForm) {
@@ -352,247 +451,3 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 });
-
-
-    // Example usage: Open the modal with a specific yard ID
-    const openModalBtn = document.getElementById('open-modal-btn');
-    if (openModalBtn) {
-        openModalBtn.addEventListener('click', function() {
-            openReservationModal('example-yard-id');
-        });
-    }
-
-    // Fetch and display the yard listings
-    db.collection('yards').get().then((querySnapshot) => {
-        const yardListings = document.getElementById('yard-listings');
-        yardListings.innerHTML = ''; // Clear existing listings
-
-        querySnapshot.forEach((doc) => {
-            const yardData = doc.data();
-            const yardId = doc.id;
-
-            // Create a div for each yard listing
-            const yardDiv = document.createElement('div');
-            yardDiv.classList.add('yard-listing');
-
-            // Populate the yard details and add a Reserve button
-            yardDiv.innerHTML = `
-                <h3>Yard Address: ${yardData.address}</h3>
-                <p>Available Spots: ${yardData.spots}</p>
-                <button onclick="openReservationModal('${yardId}')">Reserve</button>
-            `;
-
-            // Add the yard listing to the page
-            yardListings.appendChild(yardDiv);
-        });
-    }).catch((error) => {
-        console.error('Error fetching yards: ', error);
-    });
-
-    // Listen for authentication state changes
-    firebase.auth().onAuthStateChanged((user) => {
-        if (user) {
-            // User is logged in, display yard listings with Reserve button
-            db.collection('yards').get().then((querySnapshot) => {
-                const yardListings = document.getElementById('yard-listings');
-                yardListings.innerHTML = ''; // Clear any previous listings
-
-                querySnapshot.forEach((doc) => {
-                    const yardData = doc.data();
-                    const yardId = doc.id;
-
-                    // Create a div for each yard listing
-                    const yardDiv = document.createElement('div');
-                    yardDiv.classList.add('yard-listing');
-
-                    // Populate the yard details and add a Reserve button
-                    yardDiv.innerHTML = `
-                        <h3>Yard Address: ${yardData.address}</h3>
-                        <p>Available Spots: ${yardData.spots}</p>
-                        <button onclick="openReservationModal('${yardId}')">Reserve</button>
-                    `;
-
-                    // Add the yard listing to the page
-                    yardListings.appendChild(yardDiv);
-                });
-            }).catch((error) => {
-                console.error('Error fetching yards: ', error);
-            });
-        } else {
-            // User is not logged in, show a message prompting to log in
-            const yardListings = document.getElementById('yard-listings');
-            yardListings.innerHTML = '<p>You must log in to see available yards and reserve a spot.</p>';
-        }
-
-        
-    });
-
-    // Function to open the reservation modal
-    function openReservationModal(yardId) {
-        const modal = document.getElementById('reservation-modal');
-        modal.style.display = 'block';
-
-        // Store the yardId in a data attribute on the form
-        const reserveForm = document.getElementById('reserve-form');
-        reserveForm.dataset.yardId = yardId; // Attach the yardId to the form
-
-        // Attach the form event listener here to prevent multiple listeners
-        reserveForm.onsubmit = function (e) {
-            e.preventDefault(); // Prevent form from refreshing
-
-            console.log("Form submission intercepted."); // Debugging line
-
-            const spotsToReserve = parseInt(document.getElementById('reserve-spots').value); // Number of spots to reserve
-            const yardId = reserveForm.dataset.yardId; // Get yardId from data attribute
-
-            // Call the function to reserve the spot
-            reserveSpot(yardId, spotsToReserve);
-        };
-    }
-
-    // Function to close the reservation modal
-    function closeReservationModal() {
-        const modal = document.getElementById('reservation-modal');
-        modal.style.display = 'none';
-    }
-
-    function reserveSpot(yardId, spotsToReserve) {
-        const yardRef = db.collection('yards').doc(yardId);
-        
-        yardRef.get().then(async (doc) => {
-            if (doc.exists) {
-                const yardData = doc.data();
-                const availableSpots = yardData.spots;
-    
-                if (availableSpots >= spotsToReserve) {
-                    const updatedSpots = availableSpots - spotsToReserve;
-    
-                    // Fetch the owner's payment methods
-                    const ownerRef = db.collection('users').doc(yardData.owner);
-                    const ownerDoc = await ownerRef.get();
-                    if (ownerDoc.exists) {
-                        const ownerData = ownerDoc.data();
-                        const paymentMethods = ownerData.paymentMethods || [];
-    
-                        let paymentMessage = 'Must pay owner of parking place. Owner accepts these methods of payment:\n';
-                        paymentMethods.forEach(pm => {
-                            paymentMessage += `${pm.method}: ${pm.username}\n`;
-                        });
-    
-                        alert(paymentMessage); // Display the payment methods
-    
-                        // Proceed with reservation update
-                        return yardRef.update({
-                            spots: updatedSpots
-                        }).then(() => {
-                            alert('Reservation successful!');
-                            closeReservationModal();
-                            displayYardListings();
-                        });
-                    }
-                } else {
-                    alert('Not enough spots available!');
-                }
-            } else {
-                console.error('Yard not found!');
-            }
-        }).catch(error => {
-            console.error('Error updating spots:', error);
-        });
-    }
-
-    function displayYardListings() {
-        db.collection('yards').get().then((querySnapshot) => {
-            const yardListingsDiv = document.getElementById('yard-listings');
-            yardListingsDiv.innerHTML = ''; // Clear any previous listings
-    
-            querySnapshot.forEach((doc) => {
-                const yard = doc.data();
-                const yardId = doc.id; // Unique ID for each yard
-    
-                // Only display listings with available spots
-                if (yard.spots > 0) {
-                    const yardDiv = document.createElement('div');
-                    yardDiv.classList.add('yard-listing');
-    
-                    // Populate yard details and create Reserve button
-                    yardDiv.innerHTML = `
-                        <h3>Address: ${yard.address}</h3>
-                        <p>Price: $${yard.price} per car</p>
-                        <p>Date of Event: ${yard.eventDate}</p>
-                        <p>Availability: ${yard.startTime} - ${yard.endTime}</p>
-                        <p>Available Spots: ${yard.spots}</p>
-                        <button onclick="openReservationModal('${yardId}')" class="reserve-button">Reserve</button>
-                    `;
-    
-                    yardListingsDiv.appendChild(yardDiv);
-                }
-            });
-        }).catch((error) => {
-            console.error('Error fetching yard listings: ', error);
-        });
-    }
-
-    // DOMContentLoaded event to ensure the page is fully loaded before interacting with the form
-    document.addEventListener('DOMContentLoaded', function () {
-        const yardForm = document.getElementById('yard-form');
-        if (yardForm) {
-            yardForm.addEventListener('submit', async function (e) {
-                e.preventDefault();
-
-                const yardAddress = document.getElementById('yard-address').value;
-                const eventDate = document.getElementById('date-of-event').value;
-                const yardPrice = document.getElementById('price').value;
-                const startTime = document.getElementById('start-time').value;
-                const endTime = document.getElementById('end-time').value;
-                const listingType = document.querySelector('input[name="listing-type"]:checked').value;
-                const listingNote = document.getElementById('listing-note').value;
-                const spots = parseInt(document.getElementById('spots').value);
-
-                console.log('Spots Value:', spots);
-
-                if (isNaN(spots) || spots <= 0) {
-                    alert('Please enter a valid number of spots.');
-                    return;
-                }
-
-                const user = firebase.auth().currentUser;
-
-                if (user) {
-                    // Call getCoordinates() to fetch latitude and longitude for yard address
-                    const coordinates = await getCoordinates(yardAddress);
-
-                    if (!coordinates) {
-                        alert('Could not geocode the address. Please try again.');
-                        return;
-                    }
-
-                    // Add the yard listing to Firestore with latitude and longitude
-                    db.collection('yards').add({
-                        owner: user.uid,
-                        address: yardAddress,
-                        eventDate: eventDate,
-                        price: yardPrice,
-                        startTime: startTime,
-                        endTime: endTime,
-                        listingType: listingType,
-                        listingNote: listingNote,
-                        spots: spots,
-                        location: {
-                            lat: coordinates.lat,
-                            lng: coordinates.lng
-                        } // Store geocoded coordinates
-                    })
-                    .then(() => {
-                        alert('Yard listed successfully.');
-                        yardForm.reset();
-                    })
-                    .catch(error => {
-                        console.error('Error listing yard:', error);
-                    });
-                } else {
-                    alert('You must be logged in to list a yard.');
-                }
-            });
-        }
-    });
