@@ -344,15 +344,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const user = firebase.auth().currentUser;
 
         if (user) {
-            // Call getCoordinates() to fetch latitude and longitude for yard address
-            const coordinates = await getCoordinates(yardAddress);
-
-            if (!coordinates) {
-                alert('Could not geocode the address. Please try again.');
-                return;
-            }
-
-            // Add the yard listing to Firestore with latitude and longitude
+            // Add the yard listing to Firestore
             db.collection('yards').add({
                 owner: user.uid,
                 address: yardAddress,
@@ -362,11 +354,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 endTime: endTime,
                 listingType: listingType,
                 listingNote: listingNote,
-                spots: spots,
-                location: {
-                    lat: coordinates.lat,
-                    lng: coordinates.lng
-                } // Store geocoded coordinates
+                spots: spots
             })
             .then(() => {
                 alert('Yard listed successfully.');
