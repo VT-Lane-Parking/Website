@@ -293,58 +293,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (yardListingsDiv) {
         displayYardListings(); // Call the function to display yard listings
     }
-    
-    // Function to display filtered yard listings
-    function displayFilteredYardListings(location, maxPrice, listingType, availabilityDate) {
-        db.collection('yards').get().then((querySnapshot) => {
-            const yardListingsDiv = document.getElementById('yard-listings');
-            if (yardListingsDiv) {
-                yardListingsDiv.innerHTML = ''; // Clear previous listings
-
-                querySnapshot.forEach((doc) => {
-                    const yard = doc.data();
-
-                    // Convert address to lowercase for comparison
-                    const yardAddress = yard.address.toLowerCase();
-                    const yardPrice = parseFloat(yard.price);
-
-                    // Apply filters
-                    const matchesLocation = location === '' || yardAddress.includes(location);
-                    const matchesPrice = isNaN(maxPrice) || yardPrice <= maxPrice;
-                    const matchesType = listingType === '' || yard.listingType === listingType;
-                    const matchesSpots = isNaN(spots) || yard.spots >= spots;  // Filter by number of spots
-                    const matchesAvailability = availabilityDate === '' || yard.eventDate === availabilityDate;
-
-                    if (
-                        matchesLocation && 
-                        matchesPrice && 
-                        matchesType && 
-                        matchesAvailability
-                    ) {
-                        const yardDiv = document.createElement('div');
-                        yardDiv.classList.add('yard-listing');
-                        yardDiv.innerHTML = `
-                            <h3>Address: ${yard.address}</h3>
-                            <p>Price: $${yard.price} per event</p>
-                            <p>Availability: ${yard.startTime} - ${yard.endTime}</p>
-                            <p>Type: ${yard.listingType}</p>
-                            <p>Notes: ${yard.listingNote || 'No additional notes'}</p>
-                            <button onclick="openReservationModal('${yardId}')" class="reserve-button">Reserve</button>
-                        `;
-                        yardListingsDiv.appendChild(yardDiv);
-                    }
-                });
-
-                if (yardListingsDiv.innerHTML === '') {
-                    yardListingsDiv.innerHTML = "<p>No yards match your search criteria.</p>";
-                }
-            } else {
-                console.error('yard-listings element not found');
-            }
-        }).catch(error => {
-            console.error('Error fetching yard listings: ', error);
-        });
-    }
 
     // Show/Hide the 'Other' text box when 'Other' is selected
     const otherOption = document.getElementById('other-option');
