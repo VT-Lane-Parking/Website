@@ -177,7 +177,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (editAccountBtn) editAccountBtn.style.display = 'inline-block';
             if (editYardBtn) editYardBtn.style.display = 'inline-block';
 
-            displayYardListings(); // Display listings for logged-in users
+            if (yardListingsDiv) {
+                displayYardListings(); // Display listings for logged-in users
+            }
         } else {
             // User is not logged in, adjust UI accordingly
             if (loginBtn && signupBtn && logoutBtn) {
@@ -263,45 +265,31 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function populateFilters() {
-        db.collection('yards').get().then((querySnapshot) => {
-            const listingTypes = new Set();
-    
-            querySnapshot.forEach((doc) => {
-                const yard = doc.data();
-                listingTypes.add(yard.listingType);
-            });
-    
-            // Populate listing type filter
-            const listingTypeFilter = document.getElementById('listing-type-filter');
-            if (listingTypeFilter) {
-                listingTypes.forEach(type => {
-                    const option = document.createElement('option');
-                    option.value = type;
-                    option.textContent = type;
-                    listingTypeFilter.appendChild(option);
-                });
-            } else {
-                console.error('listing-type-filter element not found');
-            }
-        }).catch(error => {
-            console.error('Error fetching yard data: ', error);
-        });
-    }
-
     // Ensure populateFilters is called when the page loads
     populateFilters();
     
     // Add event listeners for payment method checkboxes
-    document.getElementById('paypal-checkbox').addEventListener('change', function() {
-        document.getElementById('paypal-username').style.display = this.checked ? 'block' : 'none';
-    });
-    document.getElementById('venmo-checkbox').addEventListener('change', function() {
-        document.getElementById('venmo-username').style.display = this.checked ? 'block' : 'none';
-    });
-    document.getElementById('zelle-checkbox').addEventListener('change', function() {
-        document.getElementById('zelle-username').style.display = this.checked ? 'block' : 'none';
-    });
+    const paypalCheckbox = document.getElementById('paypal-checkbox');
+    const venmoCheckbox = document.getElementById('venmo-checkbox');
+    const zelleCheckbox = document.getElementById('zelle-checkbox');
+
+    if (paypalCheckbox) {
+        paypalCheckbox.addEventListener('change', function() {
+            document.getElementById('paypal-username').style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    if (venmoCheckbox) {
+        venmoCheckbox.addEventListener('change', function() {
+            document.getElementById('venmo-username').style.display = this.checked ? 'block' : 'none';
+        });
+    }
+
+    if (zelleCheckbox) {
+        zelleCheckbox.addEventListener('change', function() {
+            document.getElementById('zelle-username').style.display = this.checked ? 'block' : 'none';
+        });
+    }
 
     // Fetch and display yard listings on the Browse Yards page
     const yardListingsDiv = document.getElementById('yard-listings');
@@ -327,23 +315,23 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayFilteredYardListings(location, maxPrice, listingType, availabilityDate) {
         db.collection('yards').get().then((querySnapshot) => {
             const yardListingsDiv = document.getElementById('yard-listings');
-            yardListingsDiv.innerHTML = ''; // Clear previous listings
+            if (yardListingsDiv) {
+                yardListingsDiv.innerHTML = ''; // Clear previous listings
 
-            querySnapshot.forEach((doc) => {
-                const yard = doc.data();
+                querySnapshot.forEach((doc) => {
+                    const yard = doc.data();
 
-                // Convert address to lowercase for comparison
-                const yardAddress = yard.address.toLowerCase();
-                const yardPrice = parseFloat(yard.price);
+                    // Convert address to lowercase for comparison
+                    const yardAddress = yard.address.toLowerCase();
+                    const yardPrice = parseFloat(yard.price);
 
-                // Apply filters
-                const matchesLocation = location === '' || yardAddress.includes(location);
-                const matchesPrice = isNaN(maxPrice) || yardPrice <= maxPrice;
-                const matchesType = listingType === '' || yard.listingType === listingType;
-                const matchesSpots = isNaN(spots) || yard.spots >= spots;  // Filter by number of spots
-                const matchesAvailability = availabilityDate === '' || yard.eventDate === availabilityDate;
-    
-    
+                    // Apply filters
+                    const matchesLocation = location === '' || yardAddress.includes(location);
+                    const matchesPrice = isNaN(maxPrice) || yardPrice <= maxPrice;
+                    const matchesType = listingType === '' || yard.listingType === listingType;
+                    const matchesSpots = isNaN(spots) || yard.spots >= spots;  // Filter by number of spots
+                    const matchesAvailability = availabilityDate === '' || yard.eventDate === availabilityDate;
+
                     if (
                         matchesLocation && 
                         matchesPrice && 
@@ -358,34 +346,41 @@ document.addEventListener('DOMContentLoaded', function () {
                             <p>Availability: ${yard.startTime} - ${yard.endTime}</p>
                             <p>Type: ${yard.listingType}</p>
                             <p>Notes: ${yard.listingNote || 'No additional notes'}</p>
-                            <button onclick="openReservationModal('${yardId}')" class="reserve-button">Reserve</button> <!-- Ensure this line is present -->
+                            <button onclick="openReservationModal('${yardId}')" class="reserve-button">Reserve</button>
                         `;
                         yardListingsDiv.appendChild(yardDiv);
                     }
                 });
-    
+
                 if (yardListingsDiv.innerHTML === '') {
                     yardListingsDiv.innerHTML = "<p>No yards match your search criteria.</p>";
                 }
-            }).catch(error => {
-                console.error('Error fetching yard listings: ', error);
-            });
-        }
+            } else {
+                console.error('yard-listings element not found');
+            }
+        }).catch(error => {
+            console.error('Error fetching yard listings: ', error);
+        });
+    }
 
     // Show/Hide the 'Other' text box when 'Other' is selected
     const otherOption = document.getElementById('other-option');
     const otherTextBox = document.getElementById('other-listing-type');
     const listingTypeRadios = document.getElementsByName('listing-type');
 
-    listingTypeRadios.forEach(radio => {
-        radio.addEventListener('change', function() {
-            if (otherOption.checked) {
-                otherTextBox.style.display = 'block';  // Show the text box if 'Other' is selected
-            } else {
-                otherTextBox.style.display = 'none';   // Hide the text box if 'Other' is not selected
-            }
+    if (listingTypeRadios) {
+        listingTypeRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (otherOption && otherTextBox) {
+                    if (otherOption.checked) {
+                        otherTextBox.style.display = 'block';  // Show the text box if 'Other' is selected
+                    } else {
+                        otherTextBox.style.display = 'none';   // Hide the text box if 'Other' is not selected
+                    }
+                }
+            });
         });
-    });
+    }
 
     // Yard Listing Submission
     const yardForm = document.getElementById('yard-form');
