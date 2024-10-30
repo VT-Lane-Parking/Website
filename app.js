@@ -264,9 +264,6 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
-
-    // Ensure populateFilters is called when the page loads
-    populateFilters();
     
     // Add event listeners for payment method checkboxes
     const paypalCheckbox = document.getElementById('paypal-checkbox');
