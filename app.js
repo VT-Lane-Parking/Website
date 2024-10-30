@@ -296,20 +296,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (yardListingsDiv) {
         displayYardListings(); // Call the function to display yard listings
     }
-
-    // Filtering functionality for Browse Yards
-    const filterForm = document.getElementById('yard-filter-form');
-    if (filterForm) {
-        filterForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const location = document.getElementById('location-filter').value.toLowerCase();
-            const maxPrice = parseFloat(document.getElementById('price-filter').value);
-            const listingType = document.getElementById('listing-type-filter').value;
-            const availabilityDate = document.getElementById('availability-filter').value;
-            const spots = parseInt(document.getElementById('spots-filter').value);
-            displayFilteredYardListings(location, maxPrice, listingType, availabilityDate, spots);
-        });
-    }
     
     // Function to display filtered yard listings
     function displayFilteredYardListings(location, maxPrice, listingType, availabilityDate) {
