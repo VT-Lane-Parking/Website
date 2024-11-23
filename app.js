@@ -121,7 +121,9 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
                         name: name,
                         email: email,
                         spotsReserved: spotsToReserve,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        date: new Date().toISOString().split('T')[0], // Example date field
+                        owner: "testOwnerId" // Placeholder for owner field
                     }).then(() => {
                         // Update the yard's available spots
                         return yardRef.update({
