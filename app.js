@@ -89,13 +89,22 @@ function reserveSpot(yardId, spotsToReserve) {
 
                     alert(paymentMessage); // Display the payment methods
 
-                    // Proceed with reservation update
-                    return yardRef.update({
-                        spots: updatedSpots
+                    // Add reservation to Firestore
+                    db.collection('reservations').add({
+                        yardId: yardId,
+                        owner: yardData.owner, // Include the owner UID
+                        userId: firebase.auth().currentUser.uid, // Current user making the reservation
+                        spotsReserved: spotsToReserve,
+                        date: yardData.eventDate, // Example additional field
+                    }).then(() => {
+                        // Update yard's available spots
+                        return yardRef.update({ spots: updatedSpots });
                     }).then(() => {
                         alert('Reservation successful!');
                         closeReservationModal();
                         displayYardListings();
+                    }).catch(error => {
+                        console.error('Error reserving spot:', error);
                     });
                 }
             } else {
@@ -105,7 +114,7 @@ function reserveSpot(yardId, spotsToReserve) {
             console.error('Yard not found!');
         }
     }).catch(error => {
-        console.error('Error updating spots:', error);
+        console.error('Error fetching yard:', error);
     });
 }
 
