@@ -66,7 +66,7 @@ function closeReservationModal() {
 
 function reserveSpot(yardId, spotsToReserve) {
     const yardRef = db.collection('yards').doc(yardId);
-    
+
     yardRef.get().then(async (doc) => {
         if (doc.exists) {
             const yardData = doc.data();
@@ -75,7 +75,6 @@ function reserveSpot(yardId, spotsToReserve) {
             if (availableSpots >= spotsToReserve) {
                 const updatedSpots = availableSpots - spotsToReserve;
 
-                // Fetch the owner's payment methods
                 const ownerRef = db.collection('users').doc(yardData.owner);
                 const ownerDoc = await ownerRef.get();
                 if (ownerDoc.exists) {
@@ -87,18 +86,28 @@ function reserveSpot(yardId, spotsToReserve) {
                         paymentMessage += `${pm.method}: ${pm.username}\n`;
                     });
 
-                    alert(paymentMessage); // Display the payment methods
+                    alert(paymentMessage);
 
                     // Add reservation to Firestore
+                    const currentUser = firebase.auth().currentUser;
                     db.collection('reservations').add({
                         yardId: yardId,
-                        owner: yardData.owner, // Include the owner UID
-                        userId: firebase.auth().currentUser.uid, // Current user making the reservation
+                        owner: yardData.owner,
+                        userId: currentUser.uid,
                         spotsReserved: spotsToReserve,
-                        date: yardData.eventDate, // Example additional field
+                        date: yardData.eventDate,
                     }).then(() => {
                         // Update yard's available spots
                         return yardRef.update({ spots: updatedSpots });
+                    }).then(() => {
+                        // Add ledger entry
+                        return db.collection('ledger').add({
+                            yardId: yardId,
+                            ownerId: yardData.owner,
+                            reserverId: currentUser.uid,
+                            spotsReserved: spotsToReserve,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                        });
                     }).then(() => {
                         alert('Reservation successful!');
                         closeReservationModal();
