@@ -1,4 +1,3 @@
-
 let db; // Declare db variable outside of the DOMContentLoaded event
 
 // Function to open the modal for login or sign-up
@@ -67,7 +66,7 @@ function closeReservationModal() {
 
 function reserveSpot(yardId, spotsToReserve) {
     const yardRef = db.collection('yards').doc(yardId);
-
+    
     yardRef.get().then(async (doc) => {
         if (doc.exists) {
             const yardData = doc.data();
@@ -76,6 +75,7 @@ function reserveSpot(yardId, spotsToReserve) {
             if (availableSpots >= spotsToReserve) {
                 const updatedSpots = availableSpots - spotsToReserve;
 
+                // Fetch the owner's payment methods
                 const ownerRef = db.collection('users').doc(yardData.owner);
                 const ownerDoc = await ownerRef.get();
                 if (ownerDoc.exists) {
@@ -87,34 +87,15 @@ function reserveSpot(yardId, spotsToReserve) {
                         paymentMessage += `${pm.method}: ${pm.username}\n`;
                     });
 
-                    alert(paymentMessage);
+                    alert(paymentMessage); // Display the payment methods
 
-                    // Add reservation to Firestore
-                    const currentUser = firebase.auth().currentUser;
-                    db.collection('reservations').add({
-                        yardId: yardId,
-                        owner: yardData.owner,
-                        userId: currentUser.uid,
-                        spotsReserved: spotsToReserve,
-                        date: yardData.eventDate,
-                    }).then(() => {
-                        // Update yard's available spots
-                        return yardRef.update({ spots: updatedSpots });
-                    }).then(() => {
-                        // Add ledger entry
-                        return db.collection('ledger').add({
-                            yardId: yardId,
-                            ownerId: yardData.owner,
-                            reserverId: currentUser.uid,
-                            spotsReserved: spotsToReserve,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        });
+                    // Proceed with reservation update
+                    return yardRef.update({
+                        spots: updatedSpots
                     }).then(() => {
                         alert('Reservation successful!');
                         closeReservationModal();
                         displayYardListings();
-                    }).catch(error => {
-                        console.error('Error reserving spot:', error);
                     });
                 }
             } else {
@@ -124,7 +105,7 @@ function reserveSpot(yardId, spotsToReserve) {
             console.error('Yard not found!');
         }
     }).catch(error => {
-        console.error('Error fetching yard:', error);
+        console.error('Error updating spots:', error);
     });
 }
 
@@ -241,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('zelle-checkbox').checked) {
                 paymentMethods.push({ method: 'Zelle', username: zelleUsername });
             }
- // Save user data including payment methods
+            // Save user data including payment methods
             firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then(userCredential => {
                     const user = userCredential.user;
