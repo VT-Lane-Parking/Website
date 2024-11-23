@@ -125,6 +125,12 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
                         date: new Date().toISOString().split('T')[0], // Example date field
                         owner: yardData.owner // Use the actual owner from yardData
                     }).then(() => {
+                        // Log the update attempt
+                        console.log('Attempting to update yard spots:', {
+                            yardId: yardId,
+                            updatedSpots: updatedSpots
+                        });
+
                         // Attempt to update the yard's available spots
                         yardRef.update({ spots: updatedSpots })
                             .then(() => {
@@ -136,7 +142,7 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
                                 console.error('Error updating yard spots:', error.message, {
                                     yardId: yardId,
                                     updatedSpots: updatedSpots
-                                }); // Log the yardId and updatedSpots for debugging
+                                });
                                 alert('Failed to update available spots. Please try again.');
                             });
                     }).catch((error) => {
