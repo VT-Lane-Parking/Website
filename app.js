@@ -75,17 +75,26 @@ function reserveSpot(yardId, spotsToReserve) {
             if (availableSpots >= spotsToReserve) {
                 const updatedSpots = availableSpots - spotsToReserve;
 
+                // Ask for user details (if not logged in)
+                const emailInput = document.getElementById("reserve-email").value;
+
+                if (!userEmail) {
+                    alert("Email is required to reserve a spot.");
+                    return;
+                }
+
                 // Add reservation to Firestore
                 db.collection('reservations').add({
                     yardId: yardId,
                     owner: yardData.owner,
+                    userEmail: userEmail,
                     spotsReserved: spotsToReserve,
                     date: yardData.eventDate,
                 }).then(() => {
                     // Update yard's available spots
                     return yardRef.update({ spots: updatedSpots });
                 }).then(() => {
-                    alert("Reservation successful! Thank you for reserving.");
+                    alert("Reservation successful! Check your email for payment details.");
                     closeReservationModal();
                     displayYardListings();
                 }).catch((error) => {
