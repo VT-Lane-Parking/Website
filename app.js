@@ -75,8 +75,8 @@ function reserveSpot(yardId, spotsToReserve) {
             if (availableSpots >= spotsToReserve) {
                 const updatedSpots = availableSpots - spotsToReserve;
 
-                // Ask for user details (if not logged in)
-                const emailInput = document.getElementById("reserve-email").value;
+                // Get the email input value
+                const userEmail = document.getElementById("reserve-email").value; // Use userEmail here
 
                 if (!userEmail) {
                     alert("Email is required to reserve a spot.");
@@ -87,7 +87,7 @@ function reserveSpot(yardId, spotsToReserve) {
                 db.collection('reservations').add({
                     yardId: yardId,
                     owner: yardData.owner,
-                    userEmail: userEmail,
+                    userEmail: userEmail, // Pass the user's email
                     spotsReserved: spotsToReserve,
                     date: yardData.eventDate,
                 }).then(() => {
