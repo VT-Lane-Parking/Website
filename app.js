@@ -75,6 +75,14 @@ function reserveSpot(yardId, spotsToReserve) {
             if (availableSpots >= spotsToReserve) {
                 const updatedSpots = availableSpots - spotsToReserve;
 
+                // Prompt for user details (since they aren't logged in)
+                const userName = prompt('Enter your name:');
+                const userEmail = prompt('Enter your email:');
+                if (!userName || !userEmail) {
+                    alert('Name and email are required to make a reservation.');
+                    return;
+                }
+
                 // Fetch the owner's payment methods
                 const ownerRef = db.collection('users').doc(yardData.owner);
                 const ownerDoc = await ownerRef.get();
@@ -82,36 +90,39 @@ function reserveSpot(yardId, spotsToReserve) {
                     const ownerData = ownerDoc.data();
                     const paymentMethods = ownerData.paymentMethods || [];
 
-                    let paymentMessage = 'Must pay owner of parking place. Owner accepts these methods of payment:\n';
+                    let paymentMessage = 'Pay the owner of the parking spot. Accepted payment methods:\n';
                     paymentMethods.forEach(pm => {
                         paymentMessage += `${pm.method}: ${pm.username}\n`;
                     });
 
-                    alert(paymentMessage); // Display the payment methods
+                    alert(paymentMessage); // Show payment methods to the user
 
-                    // Add reservation to Firestore
+                    // Add the reservation to Firestore
                     db.collection('reservations').add({
                         yardId: yardId,
-                        owner: yardData.owner, // Include the owner UID
-                        userId: firebase.auth().currentUser.uid, // Current user making the reservation
+                        owner: yardData.owner, // Owner of the yard
+                        userName: userName, // Unauthenticated user's name
+                        userEmail: userEmail, // Unauthenticated user's email
                         spotsReserved: spotsToReserve,
-                        date: yardData.eventDate, // Example additional field
+                        date: yardData.eventDate, // Optional: Include event date
                     }).then(() => {
-                        // Update yard's available spots
+                        // Update the yard's available spots
                         return yardRef.update({ spots: updatedSpots });
                     }).then(() => {
                         alert('Reservation successful!');
                         closeReservationModal();
-                        displayYardListings();
+                        displayYardListings(); // Refresh listings
                     }).catch(error => {
                         console.error('Error reserving spot:', error);
                     });
+                } else {
+                    alert('Owner data not found!');
                 }
             } else {
                 alert('Not enough spots available!');
             }
         } else {
-            console.error('Yard not found!');
+            alert('Yard not found!');
         }
     }).catch(error => {
         console.error('Error fetching yard:', error);
