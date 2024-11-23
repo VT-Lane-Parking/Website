@@ -75,14 +75,6 @@ function reserveSpot(yardId, spotsToReserve) {
             if (availableSpots >= spotsToReserve) {
                 const updatedSpots = availableSpots - spotsToReserve;
 
-                // Prompt for user details (since they aren't logged in)
-                const userName = prompt('Enter your name:');
-                const userEmail = prompt('Enter your email:');
-                if (!userName || !userEmail) {
-                    alert('Name and email are required to make a reservation.');
-                    return;
-                }
-
                 // Fetch the owner's payment methods
                 const ownerRef = db.collection('users').doc(yardData.owner);
                 const ownerDoc = await ownerRef.get();
@@ -90,42 +82,30 @@ function reserveSpot(yardId, spotsToReserve) {
                     const ownerData = ownerDoc.data();
                     const paymentMethods = ownerData.paymentMethods || [];
 
-                    let paymentMessage = 'Pay the owner of the parking spot. Accepted payment methods:\n';
+                    let paymentMessage = 'Must pay owner of parking place. Owner accepts these methods of payment:\n';
                     paymentMethods.forEach(pm => {
                         paymentMessage += `${pm.method}: ${pm.username}\n`;
                     });
 
-                    alert(paymentMessage); // Show payment methods to the user
+                    alert(paymentMessage); // Display the payment methods
 
-                    // Add the reservation to Firestore
-                    db.collection('reservations').add({
-                        yardId: yardId,
-                        owner: yardData.owner, // Owner of the yard
-                        userName: userName, // Unauthenticated user's name
-                        userEmail: userEmail, // Unauthenticated user's email
-                        spotsReserved: spotsToReserve,
-                        date: yardData.eventDate, // Optional: Include event date
-                    }).then(() => {
-                        // Update the yard's available spots
-                        return yardRef.update({ spots: updatedSpots });
+                    // Proceed with reservation update
+                    return yardRef.update({
+                        spots: updatedSpots
                     }).then(() => {
                         alert('Reservation successful!');
                         closeReservationModal();
-                        displayYardListings(); // Refresh listings
-                    }).catch(error => {
-                        console.error('Error reserving spot:', error);
+                        displayYardListings();
                     });
-                } else {
-                    alert('Owner data not found!');
                 }
             } else {
                 alert('Not enough spots available!');
             }
         } else {
-            alert('Yard not found!');
+            console.error('Yard not found!');
         }
     }).catch(error => {
-        console.error('Error fetching yard:', error);
+        console.error('Error updating spots:', error);
     });
 }
 
@@ -242,7 +222,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (document.getElementById('zelle-checkbox').checked) {
                 paymentMethods.push({ method: 'Zelle', username: zelleUsername });
             }
- // Save user data including payment methods
+            // Save user data including payment methods
             firebase.auth().createUserWithEmailAndPassword(email, password)
                 .then(userCredential => {
                     const user = userCredential.user;
