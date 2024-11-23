@@ -206,33 +206,26 @@ document.addEventListener('DOMContentLoaded', function () {
         const editAccountBtn = document.getElementById('edit-account-btn');
         const editYardBtn = document.getElementById('edit-yard-btn');
 
+        if (yardListingsDiv) {
+            displayYardListings(); // Display listings for all users
+        }
+        
         if (user) {
-            // User is logged in, adjust UI and show listings
-            if (loginBtn && signupBtn && logoutBtn) {
-                loginBtn.style.display = 'none';
-                signupBtn.style.display = 'none';
-                logoutBtn.style.display = 'inline-block';
-            }
-            if (yardForm) yardForm.style.display = 'block';
-            if (editAccountBtn) editAccountBtn.style.display = 'inline-block';
-            if (editYardBtn) editYardBtn.style.display = 'inline-block';
-
-            if (yardListingsDiv) {
-                displayYardListings(); // Display listings for logged-in users
-            }
+            // Adjust UI for logged-in users
+            loginBtn.style.display = 'none';
+            signupBtn.style.display = 'none';
+            logoutBtn.style.display = 'inline-block';
+            yardForm.style.display = 'block';
+            editAccountBtn.style.display = 'inline-block';
+            editYardBtn.style.display = 'inline-block';
         } else {
-            // User is not logged in, adjust UI accordingly
-            if (loginBtn && signupBtn && logoutBtn) {
-                loginBtn.style.display = 'inline-block';
-                signupBtn.style.display = 'inline-block';
-                logoutBtn.style.display = 'none';
-            }
-            if (yardForm) yardForm.style.display = 'none';
-            if (editAccountBtn) editAccountBtn.style.display = 'none';
-            if (editYardBtn) editYardBtn.style.display = 'none';
-            if (yardListingsDiv) {
-                yardListingsDiv.innerHTML = '<p>You must log in to see available yards and reserve a spot.</p>';
-            }
+            // Adjust UI for unauthenticated users
+            loginBtn.style.display = 'inline-block';
+            signupBtn.style.display = 'inline-block';
+            logoutBtn.style.display = 'none';
+            yardForm.style.display = 'none';
+            editAccountBtn.style.display = 'none';
+            editYardBtn.style.display = 'none';
         }
     });
 
