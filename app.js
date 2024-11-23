@@ -81,6 +81,8 @@ function reserveSpot(yardId, spotsToReserve) {
                     const ownerData = ownerDoc.data();
                     const paymentMethods = ownerData.paymentMethods || [];
 
+                    console.log('Owner Data:', ownerData); // Debugging log
+
                     let paymentMessage = 'Must pay owner of parking place. Owner accepts these methods of payment:\n';
                     paymentMethods.forEach(pm => {
                         paymentMessage += `${pm.method}: ${pm.username}\n`;
@@ -90,6 +92,7 @@ function reserveSpot(yardId, spotsToReserve) {
 
                     // Add reservation to Firestore
                     const currentUser = firebase.auth().currentUser;
+                    console.log('Current User:', currentUser); // Debugging log
                     db.collection('reservations').add({
                         yardId: yardId,
                         owner: yardData.owner,
@@ -98,9 +101,11 @@ function reserveSpot(yardId, spotsToReserve) {
                         date: yardData.eventDate,
                     }).then(() => {
                         // Update yard's available spots
+                        console.log('Updating yard spots...');
                         return yardRef.update({ spots: updatedSpots });
                     }).then(() => {
                         // Add ledger entry
+                        console.log('Adding ledger entry...');
                         return db.collection('ledger').add({
                             yardId: yardId,
                             ownerId: yardData.owner,
