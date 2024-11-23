@@ -123,18 +123,24 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
                         spotsReserved: spotsToReserve,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                         date: new Date().toISOString().split('T')[0], // Example date field
-                        owner: "testOwnerId" // Placeholder for owner field
+                        owner: yardData.owner // Use the actual owner from yardData
                     }).then(() => {
-                        // Update the yard's available spots
-                        return yardRef.update({
-                            spots: updatedSpots
-                        }).then(() => {
-                            alert('Reservation successful! Please make the payment using the provided details.');
-                            closeReservationModal();
-                            displayYardListings();
-                        });
+                        // Attempt to update the yard's available spots
+                        yardRef.update({ spots: updatedSpots })
+                            .then(() => {
+                                alert('Reservation successful! Please make the payment using the provided details.');
+                                closeReservationModal();
+                                displayYardListings();
+                            })
+                            .catch((error) => {
+                                console.error('Error updating yard spots:', error.message, {
+                                    yardId: yardId,
+                                    updatedSpots: updatedSpots
+                                }); // Log the yardId and updatedSpots for debugging
+                                alert('Failed to update available spots. Please try again.');
+                            });
                     }).catch((error) => {
-                        console.error('Error creating reservation:', error);
+                        console.error('Error creating reservation:', error.message);
                         alert('Failed to create the reservation. Please try again.');
                     });
                 } else {
@@ -144,10 +150,10 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
                 alert('Not enough spots available!');
             }
         } else {
-            console.error('Yard not found!');
+            console.error('Yard not found!', { yardId: yardId });
         }
     }).catch(error => {
-        console.error('Error updating spots:', error);
+        console.error('Error fetching yard data or updating spots:', error.message);
     });
 }
 
