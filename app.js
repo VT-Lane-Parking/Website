@@ -37,6 +37,8 @@ function logout() {
 
 // Function to open the reservation modal
 function openReservationModal(yardId) {
+    console.log('Yard ID being set in modal:', yardId); // Log yardId being passed to the modal
+
     const modal = document.getElementById('reservation-modal');
     modal.style.display = 'block';
 
@@ -59,6 +61,7 @@ function openReservationModal(yardId) {
         }
 
         const yardId = reserveForm.dataset.yardId; // Get yardId from data attribute
+        console.log('Yard ID passed to reserveSpot:', yardId); // Log yardId before calling reserveSpot
 
         // Call the function to reserve the spot
         reserveSpot(yardId, spotsToReserve, name, email);
@@ -72,6 +75,8 @@ function closeReservationModal() {
 }
 
 function reserveSpot(yardId, spotsToReserve, name, email) {
+    console.log('Yard ID passed to reserveSpot:', yardId); // Log yardId passed to reserveSpot
+
     // Validate that all required fields are provided
     if (!yardId || !name || !email || !spotsToReserve) {
         console.error('Invalid reservation data:', { yardId, name, email, spotsToReserve });
@@ -79,7 +84,6 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
         return;
     }
 
-    // Log the payload for debugging
     console.log('Reservation payload:', {
         yardId: yardId,
         name: name,
@@ -87,13 +91,18 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
         spotsReserved: spotsToReserve
     });
 
-    // Attempt to add the reservation to Firestore
+    // Attempt to fetch the yard document from Firestore
     const yardRef = db.collection('yards').doc(yardId);
 
     yardRef.get().then(async (doc) => {
         if (doc.exists) {
             const yardData = doc.data();
             const availableSpots = yardData.spots;
+
+            console.log('Fetched yard data:', {
+                yardId: yardId,
+                availableSpots: availableSpots
+            });
 
             if (availableSpots >= spotsToReserve) {
                 const updatedSpots = availableSpots - spotsToReserve;
@@ -122,16 +131,17 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
                         email: email,
                         spotsReserved: spotsToReserve,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                        date: new Date().toISOString().split('T')[0], // Example date field
-                        owner: yardData.owner // Use the actual owner from yardData
+                        date: new Date().toISOString().split('T')[0], // Current date for reservation
+                        owner: yardData.owner // Attach the yard's owner
                     }).then(() => {
-                        // Log the update attempt
+                        console.log('Reservation added successfully.');
+
+                        // Attempt to update the yard's available spots
                         console.log('Attempting to update yard spots:', {
                             yardId: yardId,
                             updatedSpots: updatedSpots
                         });
 
-                        // Attempt to update the yard's available spots
                         yardRef.update({ spots: updatedSpots })
                             .then(() => {
                                 alert('Reservation successful! Please make the payment using the provided details.');
@@ -150,16 +160,23 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
                         alert('Failed to create the reservation. Please try again.');
                     });
                 } else {
+                    console.error('Owner document not found!', { ownerId: yardData.owner });
                     alert('Could not fetch the owner’s payment methods. Please try again later.');
                 }
             } else {
+                console.warn('Not enough spots available for reservation:', {
+                    requestedSpots: spotsToReserve,
+                    availableSpots: availableSpots
+                });
                 alert('Not enough spots available!');
             }
         } else {
             console.error('Yard not found!', { yardId: yardId });
+            alert('The yard you are trying to reserve does not exist.');
         }
     }).catch(error => {
-        console.error('Error fetching yard data or updating spots:', error.message);
+        console.error('Error fetching yard data:', error.message);
+        alert('An error occurred while fetching yard data. Please try again.');
     });
 }
 
@@ -171,6 +188,8 @@ function displayYardListings() {
         querySnapshot.forEach((doc) => {
             const yard = doc.data();
             const yardId = doc.id; // Unique ID for each yard
+
+            console.log('Yard ID being displayed:', yardId); // Log yardId being fetched from Firestore
 
             // Only display listings with available spots
             if (yard.spots > 0) {
