@@ -48,13 +48,20 @@ function openReservationModal(yardId) {
     reserveForm.onsubmit = function (e) {
         e.preventDefault(); // Prevent form from refreshing
 
-        console.log("Form submission intercepted."); // Debugging line
-
         const spotsToReserve = parseInt(document.getElementById('reserve-spots').value); // Number of spots to reserve
+        const name = document.getElementById('reserve-name').value; // Get name input
+        const email = document.getElementById('reserve-email').value; // Get email input
+
+        // Validate name and email
+        if (!name || !email) {
+            alert("Name and email are required to make a reservation.");
+            return;
+        }
+
         const yardId = reserveForm.dataset.yardId; // Get yardId from data attribute
 
         // Call the function to reserve the spot
-        reserveSpot(yardId, spotsToReserve);
+        reserveSpot(yardId, spotsToReserve, name, email);
     };
 }
 
@@ -64,7 +71,7 @@ function closeReservationModal() {
     modal.style.display = 'none';
 }
 
-function reserveSpot(yardId, spotsToReserve) {
+function reserveSpot(yardId, spotsToReserve, name, email) {
     const yardRef = db.collection('yards').doc(yardId);
     
     yardRef.get().then(async (doc) => {
@@ -78,25 +85,42 @@ function reserveSpot(yardId, spotsToReserve) {
                 // Fetch the owner's payment methods
                 const ownerRef = db.collection('users').doc(yardData.owner);
                 const ownerDoc = await ownerRef.get();
+
                 if (ownerDoc.exists) {
                     const ownerData = ownerDoc.data();
                     const paymentMethods = ownerData.paymentMethods || [];
 
-                    let paymentMessage = 'Must pay owner of parking place. Owner accepts these methods of payment:\n';
+                    // Generate payment message
+                    let paymentMessage = 'To complete your reservation, you must pay the owner.\nAccepted payment methods are:\n';
                     paymentMethods.forEach(pm => {
                         paymentMessage += `${pm.method}: ${pm.username}\n`;
                     });
 
-                    alert(paymentMessage); // Display the payment methods
+                    // Display the payment methods in an alert
+                    alert(paymentMessage);
 
-                    // Proceed with reservation update
-                    return yardRef.update({
-                        spots: updatedSpots
+                    // Save the reservation to Firestore
+                    db.collection('reservations').add({
+                        yardId: yardId,
+                        name: name,
+                        email: email,
+                        spotsReserved: spotsToReserve,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     }).then(() => {
-                        alert('Reservation successful!');
-                        closeReservationModal();
-                        displayYardListings();
+                        // Proceed with updating the yard's available spots
+                        return yardRef.update({
+                            spots: updatedSpots
+                        }).then(() => {
+                            alert('Reservation successful! Please make the payment using the provided details.');
+                            closeReservationModal();
+                            displayYardListings();
+                        });
+                    }).catch((error) => {
+                        console.error('Error creating reservation:', error);
+                        alert('Failed to create the reservation. Please try again.');
                     });
+                } else {
+                    alert('Could not fetch the owner’s payment methods. Please try again later.');
                 }
             } else {
                 alert('Not enough spots available!');
