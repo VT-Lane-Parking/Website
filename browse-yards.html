@@ -93,7 +93,9 @@
             <h3>Reserve Your Spot</h3>
             <form id="reserve-form">
                 <p>How many spots would you like to reserve?</p>
-                <input type="number" id="reserve-spots" min="1" value="1">
+                <input type="number" id="reserve-spots" min="1" value="1" required>
+                <p>Enter your email to receive reservation details:</p>
+                <input type="email" id="reserve-email" placeholder="Email" required>
                 <button type="submit">Confirm Reservation</button>
             </form>
         </div>
