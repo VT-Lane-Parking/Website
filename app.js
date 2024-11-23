@@ -72,8 +72,24 @@ function closeReservationModal() {
 }
 
 function reserveSpot(yardId, spotsToReserve, name, email) {
+    // Validate that all required fields are provided
+    if (!yardId || !name || !email || !spotsToReserve) {
+        console.error('Invalid reservation data:', { yardId, name, email, spotsToReserve });
+        alert('Failed to make the reservation. Please ensure all fields are filled.');
+        return;
+    }
+
+    // Log the payload for debugging
+    console.log('Reservation payload:', {
+        yardId: yardId,
+        name: name,
+        email: email,
+        spotsReserved: spotsToReserve
+    });
+
+    // Attempt to add the reservation to Firestore
     const yardRef = db.collection('yards').doc(yardId);
-    
+
     yardRef.get().then(async (doc) => {
         if (doc.exists) {
             const yardData = doc.data();
@@ -107,7 +123,7 @@ function reserveSpot(yardId, spotsToReserve, name, email) {
                         spotsReserved: spotsToReserve,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     }).then(() => {
-                        // Proceed with updating the yard's available spots
+                        // Update the yard's available spots
                         return yardRef.update({
                             spots: updatedSpots
                         }).then(() => {
